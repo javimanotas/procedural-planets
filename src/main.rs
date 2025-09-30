@@ -3,7 +3,7 @@ use macroquad::prelude::*;
 const FRAGMENT_SHADER: &str = include_str!("shaders/fragment.glsl");
 const VERTEX_SHADER:   &str = include_str!("shaders/vertex.glsl");
 
-#[macroquad::main("Shader")]
+#[macroquad::main("Planets")]
 async fn main() {
 
     let material = load_material(
