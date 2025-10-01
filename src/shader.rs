@@ -35,7 +35,7 @@ pub fn preprocess(path: &Path) -> Result<String, PreprocessError> {
 
     for line in fs::read_to_string(path)?.lines() {
         let line = line.trim();
-        if !line.starts_with("#include") {
+        if !line.starts_with("#insert") {
             output.push_str(line);
             output.push('\n');
             continue;

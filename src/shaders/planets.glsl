@@ -4,11 +4,12 @@ precision highp float;
 varying float iTime;
 uniform vec2 iResolution;
 
-#include "utils/noise3d.glsl"
-#include "utils/transform.glsl"
-#include "utils/random.glsl"
+#insert "utils/noise3d.glsl"
+#insert "utils/transform.glsl"
+#insert "utils/random.glsl"
+#insert "utils/quantization.glsl"
 
-#define MAX_PALETTE_COLORS 4
+#define MAX_PALETTE_COLORS 5
 #define ERROR_COLOR vec3(1.0, 0.0, 0.0)
 
 struct Params {
@@ -19,15 +20,6 @@ struct Params {
        w represents the threshold to be applied */
     vec4 colors[MAX_PALETTE_COLORS];
 };
-
-float quantization(float x, float maxValue, float levels) {
-    x /= maxValue;
-    x *= levels;
-    x = ceil(x);
-    x /= levels;
-    x *= maxValue;
-    return x;
-}
 
 vec3 sampleColor(vec2 uv, Params params) {
     float r = length(uv);
@@ -53,22 +45,30 @@ vec3 sampleColor(vec2 uv, Params params) {
     return color * quantization(brightness, 1.0, 10.0);
 }
 
-vec3 atmosphere(vec2 uv) {
+vec3 atmosphere(vec2 uv, vec3 color) {
     float r = length(uv);
     vec3 sphereCoords = vec3(uv, sqrt(0.5 * 0.5 - r * r));
    
     float rim = pow(1.0 - dot(normalize(sphereCoords), vec3(0.0, 0.0, 1.0)), 4.0);
-    vec3 color = vec3(0.3, 0.6, 1.0) * rim;
+    color *= rim;
     vec3 lightDir = vec3(0.6, 0.0, 1.0);
     float brightness = max(0.0, dot(normalize(lightDir), normalize(sphereCoords)));
    
     return clamp(color * quantization(brightness, 1.0, 10.0), 0.0, 1.0);
 }
 
-float stars(vec2 uv, float threshold) {
-    float rnd = random(floor(uv * 500.0));
-    float star = step(threshold, rnd);
-    star *= 0.7 + 0.3 * sin(iTime * 2.0 + random(uv) * 6.2831);
+vec3 stars(vec2 uv, float threshold) {
+    float rnd = random(uv * 1000.0);
+    vec3 tint = vec3(1.0, 1.0, 0.9);
+    if (rnd < 0.333) {
+        tint = vec3(0.9, 1.0, 1.0);
+    }
+    else if (rnd < 0.666) {
+        tint = vec3(1.0, 0.9, 1.0);
+    }
+
+    vec3 star = step(threshold, random(floor(uv * 500.0))) * tint;
+    star *= 0.5 + 0.4 * sin(iTime * 2.0 + random(uv) * 6.2831);
     return star;
 }
 
@@ -93,26 +93,23 @@ vec2 computeUV() {
 void main() {
     vec2 uv = computeUV();
 
-    vec4 earthColors[MAX_PALETTE_COLORS];
-    earthColors[0] = vec4(0.42, 0.57, 0.84, 0.5);
-    earthColors[1] = vec4(0.85, 0.77, 0.59, 0.55);
-    earthColors[2] = vec4(0.57, 0.76, 0.34, 1.0);
-    Params earthParams = Params(NoiseParams(0.45, 0.6, 2.0, 2.0, 5, 0.0), 0.12, earthColors);
+    #insert "templates/earth.glsl"
 
     vec4 cloudColors[MAX_PALETTE_COLORS];
     cloudColors[0] = vec4(0.0, 0.0, 0.0, 0.7);
-    cloudColors[1] = vec4(0.9, 0.9, 1.0, 1.0);
+    cloudColors[1] = vec4(cloudColor, 1.0);
+
     Params cloudParams = Params(NoiseParams(0.5, 0.6, 3.0, 2.0, 5, 0.02), 0.26, cloudColors);
+    Params earthParams = Params(NoiseParams(0.48, 0.55, 2.5, 2.0, 5, 0.0), 0.15, planetColors);
 
     vec3 color = sampleColor(uv, cloudParams);
     if (color == vec3(0.0)) {
         color = sampleColor(uv * 1.1, earthParams);
     }
     if (color == vec3(0.0)) {
-        float starValue = stars(uv, 0.99);
-        color = vec3(starValue);
+        color = stars(uv, 0.99);
     }
-    color += atmosphere(uv);
+    color += atmosphere(uv, atmosphereColor);
 
     gl_FragColor = max(vec4(color, 1.0), vec4(0.00, 0.00, 0.00, 1.0));
 }

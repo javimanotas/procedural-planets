@@ -1,3 +1,10 @@
 # Procedural planets
 
-Render stylized, procedural planets using Rust + macroquad.
+Small toy project for rendering stylized, procedural planets using [macroquad](https://macroquad.rs).
+
+---
+
+### Screenshots
+
+![Earth](screenshots/earth.png) 
+![Alien](screenshots/alien.png)
