@@ -21,6 +21,10 @@ struct Params {
     vec4 colors[MAX_PALETTE_COLORS];
 };
 
+float quantization(float x, float amount) {
+    return floor(x / amount) * amount;
+}
+
 vec3 sampleColor(vec2 uv, Params params) {
     float r = length(uv);
 
@@ -41,7 +45,13 @@ vec3 sampleColor(vec2 uv, Params params) {
     }
 
     vec3 lightDir = vec3(0.6, 0.0, 1.0);
-    color *= max(vec3(0.0), dot(normalize(lightDir), normalize(sphereCoords)));
+
+
+    float brightness = max(0.0, dot(normalize(lightDir), normalize(sphereCoords)));
+
+
+
+    color *= quantization(brightness * 100.0, 10.0) / 100.0;
 
     return color;
 }
@@ -51,16 +61,11 @@ vec3 sampleColor(vec2 uv, Params params) {
    if the window is vertical the distance from left to right will be 1.0 units
    the other dimension will be proportional to the ratio of the screen */
 
-float quantization(float x) {
-    float pixelation = 6.0;
-    return floor(x / pixelation) * pixelation;
-}
-
 vec2 computeUV() {
     vec2 pixel = gl_FragCoord.xy;
 
-    pixel.x = quantization(pixel.x);
-    pixel.y = quantization(pixel.y);
+    pixel.x = quantization(pixel.x, 6.0);
+    pixel.y = quantization(pixel.y, 6.0);
 
 
     if (iResolution.x > iResolution.y) {
@@ -93,5 +98,5 @@ void main() {
         color = sampleColor(uv * 1.1, earthParams);
     }
 
-    gl_FragColor = max(vec4(color, 1.0), vec4(0.07, 0.07, 0.07, 1.0));
+    gl_FragColor = max(vec4(color, 1.0), vec4(0.00, 0.00, 0.00, 1.0));
 }
