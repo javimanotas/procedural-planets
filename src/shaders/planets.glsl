@@ -21,8 +21,13 @@ struct Params {
     vec4 colors[MAX_PALETTE_COLORS];
 };
 
-float quantization(float x, float amount) {
-    return floor(x / amount) * amount;
+float quantization(float x, float maxValue, float levels) {
+    x /= maxValue;
+    x *= levels;
+    x = ceil(x);
+    x /= levels;
+    x *= maxValue;
+    return x;
 }
 
 vec3 sampleColor(vec2 uv, Params params) {
@@ -45,15 +50,8 @@ vec3 sampleColor(vec2 uv, Params params) {
     }
 
     vec3 lightDir = vec3(0.6, 0.0, 1.0);
-
-
     float brightness = max(0.0, dot(normalize(lightDir), normalize(sphereCoords)));
-
-
-
-    color *= quantization(brightness * 100.0, 10.0) / 100.0;
-
-    return color;
+    return color * quantization(brightness, 1.0, 10.0);
 }
 
 /* the center of the screen corresponds to the (0.0, 0.0)
@@ -63,20 +61,15 @@ vec3 sampleColor(vec2 uv, Params params) {
 
 vec2 computeUV() {
     vec2 pixel = gl_FragCoord.xy;
-
-    pixel.x = quantization(pixel.x, 6.0);
-    pixel.y = quantization(pixel.y, 6.0);
-
-
-    if (iResolution.x > iResolution.y) {
-        vec2 uv = pixel / iResolution.y;
-        float ratio = iResolution.x / iResolution.y;
-        return uv - vec2(ratio / 2.0, 0.5);
+    vec2 resolution = iResolution.xy;
+    if (iResolution.y > iResolution.x) {
+        resolution = resolution.yx;
     }
-    
-    vec2 uv = pixel / iResolution.x;
-    float ratio = iResolution.y / iResolution.x;
-    return uv - vec2(0.5, ratio / 2.0);
+
+    pixel.x = quantization(pixel.x, resolution.y, 100.0);
+    pixel.y = quantization(pixel.y, resolution.y, 100.0);
+    vec2 uv = pixel / resolution.y;
+    return uv - vec2(iResolution.x / resolution.y / 2.0, iResolution.y / resolution.y / 2.0);
 }
 
 void main() {
@@ -85,8 +78,8 @@ void main() {
     vec4 earthColors[MAX_PALETTE_COLORS];
     earthColors[0] = vec4(0.42, 0.57, 0.84, 0.5);
     earthColors[1] = vec4(0.85, 0.77, 0.59, 0.55);
-    earthColors[2] = vec4(0.62, 0.76, 0.39, 1.0);
-    Params earthParams = Params(NoiseParams(0.5, 0.6, 2.0, 2.0, 5, 0.0), 0.15, earthColors);
+    earthColors[2] = vec4(0.57, 0.76, 0.34, 1.0);
+    Params earthParams = Params(NoiseParams(0.45, 0.6, 2.0, 2.0, 5, 0.0), 0.15, earthColors);
 
     vec4 cloudColors[MAX_PALETTE_COLORS];
     cloudColors[0] = vec4(0.0, 0.0, 0.0, 0.7);
