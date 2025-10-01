@@ -4,7 +4,8 @@ Small toy project for rendering stylized, procedural planets using [macroquad](h
 
 ---
 
-### Screenshots
-
 ![Earth](screenshots/earth.png) 
+
+---
+
 ![Alien](screenshots/alien.png)
