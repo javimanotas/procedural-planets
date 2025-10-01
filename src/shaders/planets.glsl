@@ -32,14 +32,18 @@ vec3 sampleColor(vec2 uv, Params params) {
     vec3 rotated = rotate(sphereCoords, iTime * params.rotSpeed);
     float noise = fbm(rotated + params.noise.zOffsetSpeed * vec3(iTime, 0.0, 0.0), params.noise);
 
+    vec3 color = ERROR_COLOR;
     for (int i = 0; i < MAX_PALETTE_COLORS; i++) {
-        vec4 color = params.colors[i];
-        if (color.w >= noise) {
-            return color.xyz;
+        if (params.colors[i].w >= noise) {
+            color = params.colors[i].xyz;
+            break;
         }
     }
 
-    return ERROR_COLOR;
+    vec3 lightDir = vec3(0.6, 0.0, 1.0);
+    color *= max(vec3(0.0), dot(normalize(lightDir), normalize(sphereCoords)));
+
+    return color;
 }
 
 /* the center of the screen corresponds to the (0.0, 0.0)
@@ -47,14 +51,25 @@ vec3 sampleColor(vec2 uv, Params params) {
    if the window is vertical the distance from left to right will be 1.0 units
    the other dimension will be proportional to the ratio of the screen */
 
+float quantization(float x) {
+    float pixelation = 6.0;
+    return floor(x / pixelation) * pixelation;
+}
+
 vec2 computeUV() {
+    vec2 pixel = gl_FragCoord.xy;
+
+    pixel.x = quantization(pixel.x);
+    pixel.y = quantization(pixel.y);
+
+
     if (iResolution.x > iResolution.y) {
-        vec2 uv = gl_FragCoord.xy / iResolution.y;
+        vec2 uv = pixel / iResolution.y;
         float ratio = iResolution.x / iResolution.y;
         return uv - vec2(ratio / 2.0, 0.5);
     }
     
-    vec2 uv = gl_FragCoord.xy / iResolution.x;
+    vec2 uv = pixel / iResolution.x;
     float ratio = iResolution.y / iResolution.x;
     return uv - vec2(0.5, ratio / 2.0);
 }
