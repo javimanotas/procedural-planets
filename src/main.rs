@@ -1,15 +1,19 @@
+use std::path::Path;
 use macroquad::prelude::*;
-
-const FRAGMENT_SHADER: &str = include_str!("shaders/fragment.glsl");
-const VERTEX_SHADER:   &str = include_str!("shaders/vertex.glsl");
+mod shader;
 
 #[macroquad::main("Planets")]
 async fn main() {
+    let vertex = shader::preprocess(Path::new("src/shaders/vertex.glsl"))
+        .unwrap_or_else(|err| panic!("Error loading vertex shader, {err}"));
+    
+    let fragment = shader::preprocess(Path::new("src/shaders/planets.glsl"))
+        .unwrap_or_else(|err| panic!("Error loading vertex shader, {err}"));
 
     let material = load_material(
         ShaderSource::Glsl {
-            vertex: VERTEX_SHADER,
-            fragment: FRAGMENT_SHADER,
+            vertex: &vertex,
+            fragment: &fragment,
         },
         MaterialParams {
             uniforms: vec![
@@ -17,21 +21,12 @@ async fn main() {
             ],
             ..Default::default()
         },
-    ).unwrap();
+    ).unwrap_or_else(|err| panic!("Error compiling shaders: {err}"));
 
     loop {
-
         material.set_uniform("iResolution", (screen_width(), screen_height()));
         gl_use_material(&material);
-        
-        let params = DrawTextureParams {
-            dest_size: Some(vec2(screen_width(), screen_height())),
-            ..Default::default()
-        };
-
-        let tex = render_target(1, 1).texture;
-        draw_texture_ex(&tex, 0., 0., WHITE, params);
-
+        draw_rectangle(0., 0., screen_width(), screen_height(), WHITE);
         next_frame().await
     }
 }
