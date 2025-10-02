@@ -12,6 +12,8 @@ uniform vec2 iResolution;
 #define MAX_PALETTE_COLORS 5
 #define ERROR_COLOR vec3(1.0, 0.0, 0.0)
 
+float pixels = 128.0;
+
 struct Params {
     NoiseParams noise;
     float rotSpeed;
@@ -42,7 +44,7 @@ vec3 sampleColor(vec2 uv, Params params) {
 
     vec3 lightDir = vec3(0.6, 0.0, 1.0);
     float brightness = max(0.0, dot(normalize(lightDir), normalize(sphereCoords)));
-    return color * quantization(brightness, 1.0, 10.0);
+    return color * quantization(brightness, 1.0, pixels / 10.0);
 }
 
 vec3 atmosphere(vec2 uv, vec3 color) {
@@ -54,7 +56,7 @@ vec3 atmosphere(vec2 uv, vec3 color) {
     vec3 lightDir = vec3(0.6, 0.0, 1.0);
     float brightness = max(0.0, dot(normalize(lightDir), normalize(sphereCoords)));
    
-    return clamp(color * quantization(brightness, 1.0, 10.0), 0.0, 1.0);
+    return clamp(color * quantization(brightness, 1.0, pixels / 10.0), 0.0, 1.0);
 }
 
 vec3 stars(vec2 uv, float threshold) {
@@ -84,8 +86,8 @@ vec2 computeUV() {
         resolution = resolution.yx;
     }
 
-    pixel.x = quantization(pixel.x, resolution.y, 100.0);
-    pixel.y = quantization(pixel.y, resolution.y, 100.0);
+    pixel.x = quantization(pixel.x, resolution.y, pixels);
+    pixel.y = quantization(pixel.y, resolution.y, pixels);
     vec2 uv = pixel / resolution.y;
     return uv - vec2(iResolution.x / resolution.y / 2.0, iResolution.y / resolution.y / 2.0);
 }
